@@ -81,12 +81,76 @@ agent = create_react_agent(
 # RUN AGENT
 # -------------------------
 
+# def run_agent(query: str, pdf_text: str):
+
+#     global LAST_PDF
+
+#     LAST_PDF = pdf_text
+
+#     result = agent.invoke(
+#         {
+#             "messages": [
+#                 ("user", query)
+#             ]
+#         }
+#     )
+
+#     return result["messages"][-1].content
+
+
 def run_agent(query: str, pdf_text: str):
 
     global LAST_PDF
 
     LAST_PDF = pdf_text
 
+    # print("\n=== AGENT TRACE ===")
+    # print("User:", query)
+
+    # # ---------- STREAM ----------
+    # for step in agent.stream(
+    #     {
+    #         "messages": [
+    #             ("user", query)
+    #         ]
+    #     }
+    # ):
+
+    #     # print raw step if needed
+    #     # print(step)
+
+    #     # -------- agent step (tool call decision) --------
+    #     if "agent" in step:
+
+    #         msgs = step["agent"]["messages"]
+
+    #         for m in msgs:
+
+    #             # print thought
+    #             if hasattr(m, "content") and m.content:
+    #                 print("Thought:", m.content)
+
+    #             # print tool call
+    #             if hasattr(m, "tool_calls") and m.tool_calls:
+
+    #                 for t in m.tool_calls:
+    #                     print("Action:", t["name"])
+
+    #     # -------- tool execution --------
+    #     if "tools" in step:
+
+    #         msgs = step["tools"]["messages"]
+
+    #         for m in msgs:
+
+    #             print("Observation from tool:", m.name)
+
+    #             # optional: print result
+    #             # print(m.content)
+
+    # print("=== END TRACE ===\n")
+
+    # ---------- FINAL RESULT ----------
     result = agent.invoke(
         {
             "messages": [
