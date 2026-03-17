@@ -1,0 +1,7 @@
+Maintenance Guide
+
+High vibration may indicate bearing wear.
+High temperature may indicate lubrication problem.
+Noise may indicate shaft misalignment.
+If vibration and temperature both high, inspect bearing and lubrication.
+Service interval should not exceed 30 days.

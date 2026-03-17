@@ -1,0 +1,9 @@
+openai
+langchain
+faiss-cpu
+pdfplumber
+fastapi
+uvicorn
+streamlit
+tiktoken
+python-dotenv

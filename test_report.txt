@@ -1,0 +1,4 @@
+Machine ID: M102
+Temperature high
+Vibration above limit
+Last service 20 days ago
