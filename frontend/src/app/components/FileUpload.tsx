@@ -10,11 +10,12 @@ type AnalyzeResponse = {
 
 type FileUploadProps = {
   onAnalyzeSuccess: (result: AnalyzeResponse) => void;
+  onAnalyzeStateChange: (isAnalyzing: boolean) => void;
 };
 
 const API_BASE = "/backend";
 
-export default function FileUpload({ onAnalyzeSuccess }: FileUploadProps) {
+export default function FileUpload({ onAnalyzeSuccess, onAnalyzeStateChange }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +32,7 @@ export default function FileUpload({ onAnalyzeSuccess }: FileUploadProps) {
     try {
       setLoading(true);
       setError(null);
+      onAnalyzeStateChange(true);
 
       const response = await fetch(`${API_BASE}/analyze`, {
         method: "POST",
@@ -48,6 +50,7 @@ export default function FileUpload({ onAnalyzeSuccess }: FileUploadProps) {
       setError(uploadError instanceof Error ? uploadError.message : "Upload failed.");
     } finally {
       setLoading(false);
+      onAnalyzeStateChange(false);
     }
   };
   return (

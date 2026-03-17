@@ -22,6 +22,7 @@ const API_BASE = "/backend";
 
 export default function HomePage() {
   const [result, setResult] = useState<AnalyzeResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -76,8 +77,17 @@ export default function HomePage() {
           </p>
         </section>
 
-        <FileUpload onAnalyzeSuccess={handleAnalyzeSuccess} />
-        <ResultView result={result} />
+        <FileUpload
+          onAnalyzeSuccess={handleAnalyzeSuccess}
+          onAnalyzeStateChange={(loading) => {
+            setIsAnalyzing(loading);
+            if (loading) {
+              setResult(null);
+              setChatOpen(false);
+            }
+          }}
+        />
+        <ResultView result={result} isLoading={isAnalyzing} />
       </div>
 
       <FloatingChat visible={Boolean(result) && !chatOpen} onOpen={() => setChatOpen(true)} />

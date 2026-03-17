@@ -8,6 +8,7 @@ type AnalyzeResult = {
 
 type ResultViewProps = {
   result: AnalyzeResult | null;
+  isLoading: boolean;
 };
 
 function formatParsed(parsed: string): string {
@@ -19,14 +20,25 @@ function formatParsed(parsed: string): string {
   }
 }
 
-export default function ResultView({ result }: ResultViewProps) {
-  if (!result) {
+export default function ResultView({ result, isLoading }: ResultViewProps) {
+  if (!isLoading && !result) {
+    return null;
+  }
+
+  if (isLoading) {
     return (
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-900">Analysis Result</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Upload a PDF to see parsed data and recommendation.
-        </p>
+        <div className="animate-pulse space-y-4">
+          <div>
+            <div className="h-4 w-28 rounded bg-slate-200" />
+            <div className="mt-2 h-44 w-full rounded-md bg-slate-200" />
+          </div>
+          <div>
+            <div className="h-4 w-36 rounded bg-slate-200" />
+            <div className="mt-2 h-32 w-full rounded-md bg-slate-200" />
+          </div>
+        </div>
       </section>
     );
   }
