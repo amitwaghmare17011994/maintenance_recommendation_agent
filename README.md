@@ -7,7 +7,6 @@ This project is an AI-based maintenance recommendation system using:
 * OpenAI LLM
 * RAG with FAISS
 * PDF parsing
-* Next.js frontend
 
 The system can:
 
@@ -25,7 +24,6 @@ The system can:
 ```mermaid
 flowchart TD
     User[User]
-    FE[Next.js Frontend]
     API[FastAPI Backend<br/>api/main.py]
 
     Analyze[/POST /analyze/]
@@ -42,8 +40,7 @@ flowchart TD
     OpenAI[OpenAI LLM]
     Logs[(logs/logs.json)]
 
-    User --> FE
-    FE --> API
+    User --> API
 
     API --> Analyze
     API --> Agent
@@ -90,8 +87,6 @@ vector_db/
 logs/
 
 venv/
-
-frontend (Next.js project)
 
 ---
 
@@ -206,40 +201,6 @@ Agent uses last uploaded PDF.
 
 ---
 
-# Run Next.js Frontend
-
-Go to frontend folder
-
-```bash
-cd frontend
-```
-
-Install
-
-```bash
-npm install
-```
-
-Run dev server
-
-```bash
-npm run dev
-```
-
-Open
-
-```
-http://localhost:3000
-```
-
-Frontend calls backend:
-
-```
-http://127.0.0.1:8000
-```
-
----
-
 # Notes
 
 * Always activate venv before running backend
@@ -262,12 +223,6 @@ Run API
 
 ```bash
 python -m uvicorn api.main:app --reload
-```
-
-Run frontend
-
-```bash
-npm run dev
 ```
 
 Stop server
