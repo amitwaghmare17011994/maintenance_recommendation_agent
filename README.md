@@ -20,6 +20,53 @@ The system can:
 
 ---
 
+# Architecture Diagram
+
+```mermaid
+flowchart TD
+    User[User]
+    FE[Next.js Frontend]
+    API[FastAPI Backend<br/>api/main.py]
+
+    Analyze[/POST /analyze/]
+    Agent[/POST /agent/]
+    Chat[/POST /chat/]
+
+    Parser[PDF Reader + Parser<br/>core/reader.py + core/parser.py]
+    AgentCore[LangGraph ReAct Agent<br/>core/agent.py]
+    RAG[RAG Pipeline<br/>core/rag.py]
+    Generator[Recommendation Generator<br/>core/generator.py]
+
+    Manual[(data/manual.txt)]
+    VectorDB[(FAISS Vector DB<br/>vector_db/)]
+    OpenAI[OpenAI LLM]
+    Logs[(logs/logs.json)]
+
+    User --> FE
+    FE --> API
+
+    API --> Analyze
+    API --> Agent
+    API --> Chat
+
+    Analyze --> Parser
+    Parser --> RAG
+    Manual --> RAG
+    RAG --> VectorDB
+
+    Agent --> AgentCore
+    Chat --> AgentCore
+    AgentCore --> RAG
+    AgentCore --> Generator
+    AgentCore --> OpenAI
+
+    RAG --> OpenAI
+    Generator --> OpenAI
+    AgentCore --> Logs
+```
+
+---
+
 # Project Structure
 
 maintenance_agent/
