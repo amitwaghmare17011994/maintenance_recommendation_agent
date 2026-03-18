@@ -27,6 +27,39 @@ LAST_PDF = ""
 # -------------------------
 
 @tool
+def create_maintenance_plan(text: str) -> str:
+    """Generate maintenance plan from report"""
+
+    print("Creating maintenance plan...")
+
+    prompt = f"""
+You are a maintenance expert.
+
+Create step-by-step maintenance plan.
+
+Report:
+{text}
+
+Return format:
+
+Maintenance Plan:
+1.
+2.
+3.
+4.
+"""
+
+    r = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    return r.choices[0].message.content
+
+
+@tool
 def risk_assessment(text: str) -> str:
     """Assess risk level from maintenance report"""
 
@@ -141,7 +174,7 @@ tools = [
     get_report_context,
     list_detected_issues,
     risk_assessment,
-
+    create_maintenance_plan,
 ]
 
 
@@ -152,35 +185,46 @@ agent = create_react_agent(
     llm,
     tools,
     prompt="""
-You are a maintenance AI agent.
+You are an industrial maintenance AI agent.
 
-Important rules:
+The maintenance report is already uploaded.
+Never ask the user to provide the report.
 
-- The maintenance report is already uploaded.
-- Never ask the user to provide the report.
-- Always call get_report_context first to read the report.
+IMPORTANT RULES:
 
-Tool usage rules:
+1. Always call get_report_context first to read the report.
+2. Always use tools to answer.
+3. Never invent report data.
+4. Never ask user for report.
+5. Do NOT rewrite tool output.
+6. Return tool output exactly as it is.
+7. Keep formatting from tools (bullet points, numbers, etc).
 
-If user asks about issues / problems:
-    get_report_context -> list_detected_issues
+TOOL USAGE RULES:
+
+If user asks about issues / problems / faults:
+    get_report_context → list_detected_issues
 
 If user asks about risk / safety / danger / priority:
-    get_report_context -> risk_assessment
+    get_report_context → risk_assessment
 
-If user asks about recommendation / fix / repair:
-    get_report_context -> recommend_from_text
+If user asks about recommendation / fix / solution:
+    get_report_context → recommend_from_text
 
-If user asks about manual / guide:
+If user asks about plan / steps / repair / maintenance plan:
+    get_report_context → create_maintenance_plan
+
+If user asks about manual / guide / rules:
     retrieve_manual
 
-Never ask user for report.
-Never say "please provide report".
-Report already exists.
+VERY IMPORTANT:
+
+- Do not summarize tool output
+- Do not reformat tool output
+- Do not add explanation unless asked
+- Return tool result directly
 """
 )
-
-
 # -------------------------
 # RUN AGENT
 # -------------------------
