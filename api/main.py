@@ -9,10 +9,19 @@ from core.rag import chat_with_manual
 from core.logger import save_log
 from core.agent import run_agent
 from openai import OpenAI
+from fastapi.middleware.cors import CORSMiddleware
 
 client = OpenAI()
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 last_pdf_text = ""
 @app.get("/")
