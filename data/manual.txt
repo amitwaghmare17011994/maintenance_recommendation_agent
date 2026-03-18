@@ -1,7 +1,82 @@
 Maintenance Guide
 
-High vibration may indicate bearing wear.
-High temperature may indicate lubrication problem.
-Noise may indicate shaft misalignment.
-If vibration and temperature both high, inspect bearing and lubrication.
+General Rules
 Service interval should not exceed 30 days.
+If service overdue, perform full inspection.
+If multiple parameters exceed limits, stop machine immediately.
+Always check lubrication before operation.
+
+Temperature Rules
+High temperature may indicate lubrication problem.
+Very high temperature may indicate cooling failure.
+Overheating may damage bearings and spindle.
+If temperature remains high after service, inspect motor and cooling system.
+
+Vibration Rules
+High vibration may indicate bearing wear.
+High vibration may indicate loose mounting.
+High vibration during cutting may indicate tool imbalance.
+If vibration increases with speed, inspect spindle bearings.
+If vibration and noise both high, check alignment.
+
+Noise Rules
+High noise may indicate shaft misalignment.
+Grinding noise may indicate bearing damage.
+Knocking noise may indicate loose components.
+If noise increases with load, inspect motor and coupling.
+
+Lubrication Rules
+Poor lubrication may cause overheating.
+Low lubrication may damage bearings.
+Dirty lubrication may cause vibration.
+If lubrication status poor, clean and refill system.
+
+Coolant Rules
+Low coolant may cause overheating.
+Coolant leakage may damage machine.
+Blocked coolant line may cause temperature rise.
+If coolant level low, refill and check pump.
+
+Pressure Rules (Compressor / Pump)
+Low pressure may indicate leakage.
+Pressure drop may indicate valve problem.
+High pressure may indicate blockage.
+If pressure unstable, inspect regulator and valves.
+
+Compressor Rules
+If pressure low and temperature high, inspect compressor valves.
+Oil leakage may indicate seal damage.
+High noise in compressor may indicate piston wear.
+If compressor overheats, check lubrication and cooling.
+
+CNC Machine Rules
+Unstable spindle speed may indicate motor issue.
+Spindle noise may indicate bearing damage.
+High vibration during cutting may indicate tool problem.
+Poor surface finish may indicate misalignment.
+If spindle speed fluctuates, inspect drive system.
+
+Turbine Rules
+High temperature in turbine may indicate cooling failure.
+High vibration in turbine may indicate imbalance.
+Delayed startup may indicate control issue.
+If turbine overheats, stop operation immediately.
+
+Safety Rules
+If vibration high + temperature high → high risk.
+If temperature high + lubrication poor → critical risk.
+If service overdue + vibration high → failure risk.
+If multiple warnings present → stop machine.
+
+Maintenance Actions
+Inspect bearing
+Check lubrication
+Check coolant
+Check alignment
+Check pressure
+Check motor
+Check valves
+Check seals
+Replace worn parts
+Perform full service
+Run test after repair

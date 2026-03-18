@@ -9,18 +9,37 @@ client = OpenAI()
 
 def parse_report(text: str) -> str:
     """
-    Use LLM to extract machine data
+    Use LLM to extract machine data from complex report
     """
 
     prompt = f"""
-Extract machine information from the report.
+You are an industrial maintenance parser.
 
-Return JSON with keys:
+Extract structured information from the report.
+
+Return valid JSON with keys:
+
 machine_id
+machine_type
 temperature
 vibration
+noise
+pressure
+coolant
+lubrication
 last_service
-issue
+description
+observation
+warning
+issues
+full_text
+
+Rules:
+- issues must be list
+- keep description as paragraph
+- keep observation as paragraph
+- keep warning text
+- full_text must contain full report
 
 Report:
 {text}
