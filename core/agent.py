@@ -225,10 +225,12 @@ VERY IMPORTANT:
 - Return tool result directly
 """
 )
+ 
+
+
 # -------------------------
 # RUN AGENT
 # -------------------------
- 
 
 def run_agent(query: str, pdf_text: str):
 
@@ -236,54 +238,9 @@ def run_agent(query: str, pdf_text: str):
 
     LAST_PDF = pdf_text
 
-    # print("\n=== AGENT TRACE ===")
     print("User:", query)
     print("Agent: Thinking...")
 
-    # # ---------- STREAM ----------
-    # for step in agent.stream(
-    #     {
-    #         "messages": [
-    #             ("user", query)
-    #         ]
-    #     }
-    # ):
-
-    #     # print raw step if needed
-    #     # print(step)
-
-    #     # -------- agent step (tool call decision) --------
-    #     if "agent" in step:
-
-    #         msgs = step["agent"]["messages"]
-
-    #         for m in msgs:
-
-    #             # print thought
-    #             if hasattr(m, "content") and m.content:
-    #                 print("Thought:", m.content)
-
-    #             # print tool call
-    #             if hasattr(m, "tool_calls") and m.tool_calls:
-
-    #                 for t in m.tool_calls:
-    #                     print("Action:", t["name"])
-
-    #     # -------- tool execution --------
-    #     if "tools" in step:
-
-    #         msgs = step["tools"]["messages"]
-
-    #         for m in msgs:
-
-    #             print("Observation from tool:", m.name)
-
-    #             # optional: print result
-    #             # print(m.content)
-
-    # print("=== END TRACE ===\n")
-
-    # ---------- FINAL RESULT ----------
     result = agent.invoke(
         {
             "messages": [
@@ -293,3 +250,52 @@ def run_agent(query: str, pdf_text: str):
     )
 
     return result["messages"][-1].content
+
+
+# -------------------------
+# STREAM AGENT
+# -------------------------
+
+
+def run_agent_stream(query: str, pdf_text: str):
+
+    global LAST_PDF
+
+    LAST_PDF = pdf_text
+
+    for step in agent.stream(
+        {
+            "messages": [
+                ("user", query)
+            ]
+        }
+    ):
+
+        # ---------- AGENT THINK ----------
+        if "agent" in step:
+
+            msgs = step["agent"]["messages"]
+
+            for m in msgs:
+
+                # tool call
+                if hasattr(m, "tool_calls") and m.tool_calls:
+
+                    for t in m.tool_calls:
+
+                        name = t["name"]
+
+                        yield f"⚙️ Calling tool: {name}\n"
+
+                # thought text
+                if hasattr(m, "content") and m.content:
+                    yield f"🤖 {m.content}\n"
+
+        # ---------- TOOL RESULT ----------
+        if "tools" in step:
+
+            msgs = step["tools"]["messages"]
+
+            for m in msgs:
+
+                yield f"✔ Tool finished: {m.name}\n"

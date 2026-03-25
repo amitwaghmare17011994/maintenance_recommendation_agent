@@ -10,7 +10,8 @@ from core.logger import save_log
 from core.agent import run_agent
 from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.responses import StreamingResponse
+from core.agent import run_agent_stream
 client = OpenAI()
 
 app = FastAPI()
@@ -130,3 +131,22 @@ async def agent_api(query: str):
     return {
         "answer": result
     }
+
+@app.post("/agent-stream")
+async def agent_stream(query: str):
+
+    global last_pdf_text
+
+    if last_pdf_text == "":
+        return {"answer": "No report uploaded"}
+
+    def generate():
+
+        for chunk in run_agent_stream(query, last_pdf_text):
+
+            yield chunk.encode("utf-8")
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/plain"
+    )
