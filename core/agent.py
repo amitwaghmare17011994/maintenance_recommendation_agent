@@ -5,6 +5,7 @@ from langgraph.prebuilt import create_react_agent
 from core.parser import parse_report
 from core.rag import retrieve, chat_with_manual
 from core.generator import generate_recommendation
+from core.context_cache import get_cache, set_cache
 from openai import OpenAI
 
 client = OpenAI()
@@ -32,6 +33,12 @@ def create_maintenance_plan(text: str) -> str:
 
     print("Creating maintenance plan...")
 
+    cached = get_cache("plan", text)
+
+    if cached:
+        print("CACHE HIT")
+        return cached
+
     prompt = f"""
 You are a maintenance expert.
 
@@ -56,7 +63,11 @@ Maintenance Plan:
         ]
     )
 
-    return r.choices[0].message.content
+    result = r.choices[0].message.content
+
+    set_cache("plan", text, result)
+
+    return result
 
 
 @tool
@@ -64,6 +75,12 @@ def risk_assessment(text: str) -> str:
     """Assess risk level from maintenance report"""
 
     print("Assessing risk level...")
+
+    cached = get_cache("risk", text)
+
+    if cached:
+        print("CACHE HIT")
+        return cached
 
     prompt = f"""
 You are a maintenance expert.
@@ -90,7 +107,11 @@ Reason:
         ]
     )
 
-    return r.choices[0].message.content
+    result = r.choices[0].message.content
+
+    set_cache("risk", text, result)
+
+    return result
 
 
 
@@ -99,6 +120,12 @@ def list_detected_issues(text: str) -> str:
     """Extract issues from maintenance report"""
 
     print("Listing issues...")
+
+    cached = get_cache("issues", text)
+
+    if cached:
+        print("CACHE HIT")
+        return cached
 
     prompt = f"""
 You are a maintenance expert.
@@ -126,7 +153,11 @@ Do not ask questions.
         ]
     )
 
-    return r.choices[0].message.content
+    result = r.choices[0].message.content
+
+    set_cache("issues", text, result)
+
+    return result
 
 @tool
 def retrieve_manual(query: str) -> str:
@@ -148,11 +179,22 @@ def chat_manual(query: str) -> str:
 def recommend_from_text(text: str) -> str:
     """Generate recommendation from report text"""
     print("Generating recommendation from text...")
+
+    cached = get_cache("recommend", text)
+
+    if cached:
+        print("CACHE HIT")
+        return cached
+
     parsed = parse_report(text)
 
     docs = retrieve(parsed)
 
-    return generate_recommendation(parsed, docs)
+    result = generate_recommendation(parsed, docs)
+
+    set_cache("recommend", text, result)
+
+    return result
     
 @tool
 def get_report_context(query: str = "") -> str:
