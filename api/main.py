@@ -7,11 +7,16 @@ from core.rag import retrieve
 from core.generator import generate_recommendation
 from core.rag import chat_with_manual
 from core.logger import save_log
-from core.agent import run_agent
 from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from core.agent import run_agent_stream
+from core.controller import handle_query
+from pydantic import BaseModel
+
+
+class QueryRequest(BaseModel):
+    query: str
+
+
 client = OpenAI()
 
 app = FastAPI()
@@ -115,38 +120,21 @@ Question:
     return {
         "answer": r.choices[0].message.content
     }
-    
+
 @app.post("/agent")
-async def agent_api(query: str):
+async def agent_api(req: QueryRequest):
+
+    query = req.query
 
     global last_pdf_text
 
     if last_pdf_text == "":
         return {
-            "answer": "No report uploaded. Please call /analyze first."
+            "answer": "No report uploaded"
         }
 
-    result = run_agent(query, last_pdf_text)
+    result = handle_query(query, last_pdf_text)
 
     return {
         "answer": result
     }
-
-@app.post("/agent-stream")
-async def agent_stream(query: str):
-
-    global last_pdf_text
-
-    if last_pdf_text == "":
-        return {"answer": "No report uploaded"}
-
-    def generate():
-
-        for chunk in run_agent_stream(query, last_pdf_text):
-
-            yield chunk.encode("utf-8")
-
-    return StreamingResponse(
-        generate(),
-        media_type="text/plain"
-    )

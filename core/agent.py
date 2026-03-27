@@ -2,13 +2,15 @@ from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
-from core.parser import parse_report
 from core.rag import retrieve, chat_with_manual
-from core.generator import generate_recommendation
-from core.context_cache import get_cache, set_cache
-from openai import OpenAI
+from core.tools_impl import (
+    list_detected_issues_impl,
+    risk_assessment_impl,
+    create_maintenance_plan_impl,
+    recommend_from_text_impl,
+    get_report_context_impl,
+)
 
-client = OpenAI()
 # -------------------------
 # LLM
 # -------------------------
@@ -24,147 +26,32 @@ LAST_PDF = ""
 
 
 # -------------------------
-# TOOLS
+# TOOLS (thin wrappers — logic lives in tools_impl.py)
 # -------------------------
 
 @tool
 def create_maintenance_plan(text: str) -> str:
     """Generate maintenance plan from report"""
-
-    print("Creating maintenance plan...")
-
-    cached = get_cache("plan", text)
-
-    if cached:
-        print("CACHE HIT")
-        return cached
-
-    prompt = f"""
-You are a maintenance expert.
-
-Create step-by-step maintenance plan.
-
-Report:
-{text}
-
-Return format:
-
-Maintenance Plan:
-1.
-2.
-3.
-4.
-"""
-
-    r = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-
-    result = r.choices[0].message.content
-
-    set_cache("plan", text, result)
-
-    return result
+    return create_maintenance_plan_impl(text)
 
 
 @tool
 def risk_assessment(text: str) -> str:
     """Assess risk level from maintenance report"""
-
-    print("Assessing risk level...")
-
-    cached = get_cache("risk", text)
-
-    if cached:
-        print("CACHE HIT")
-        return cached
-
-    prompt = f"""
-You are a maintenance expert.
-
-Analyze the report and determine risk level.
-
-Report:
-{text}
-
-Return in format:
-
-Risk Level: LOW / MEDIUM / HIGH / CRITICAL
-
-Reason:
-- reason 1
-- reason 2
-- reason 3
-"""
-
-    r = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-
-    result = r.choices[0].message.content
-
-    set_cache("risk", text, result)
-
-    return result
-
+    return risk_assessment_impl(text)
 
 
 @tool
 def list_detected_issues(text: str) -> str:
     """Extract issues from maintenance report"""
+    return list_detected_issues_impl(text)
 
-    print("Listing issues...")
-
-    cached = get_cache("issues", text)
-
-    if cached:
-        print("CACHE HIT")
-        return cached
-
-    prompt = f"""
-You are a maintenance expert.
-
-Read the report and list all detected issues.
-
-Report:
-{text}
-
-Return result as bullet points.
-
-Format:
-- issue 1
-- issue 2
-- issue 3
-
-Do not explain.
-Do not ask questions.
-"""
-
-    r = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-
-    result = r.choices[0].message.content
-
-    set_cache("issues", text, result)
-
-    return result
 
 @tool
 def retrieve_manual(query: str) -> str:
     """Search maintenance manual"""
     print("Retrieving manual...")
     docs = retrieve(query)
-
     return "\n".join([d.page_content for d in docs])
 
 
@@ -178,36 +65,13 @@ def chat_manual(query: str) -> str:
 @tool
 def recommend_from_text(text: str) -> str:
     """Generate recommendation from report text"""
-    print("Generating recommendation from text...")
+    return recommend_from_text_impl(text)
 
-    cached = get_cache("recommend", text)
 
-    if cached:
-        print("CACHE HIT")
-        return cached
-
-    parsed = parse_report(text)
-
-    docs = retrieve(parsed)
-
-    result = generate_recommendation(parsed, docs)
-
-    set_cache("recommend", text, result)
-
-    return result
-    
 @tool
 def get_report_context(query: str = "") -> str:
     """Get last uploaded report text"""
-
-    print("Getting last uploaded report text...")
-
-    global LAST_PDF
-
-    if not LAST_PDF:
-        return "No report available"
-
-    return LAST_PDF
+    return get_report_context_impl(LAST_PDF)
 
 tools = [
     retrieve_manual,
