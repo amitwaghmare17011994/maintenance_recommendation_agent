@@ -155,6 +155,52 @@ def recommend_from_text_impl(text: str) -> str:
     return result
 
 
+def calculate_failure_score(text: str) -> tuple[int, list[str]]:
+
+    t = text.lower()
+
+    score = 0
+    reasons = []
+
+    if "high temperature" in t or "temperature increased" in t:
+        score += 2
+        reasons.append("High temperature")
+
+    if "vibration" in t:
+        score += 3
+        reasons.append("High vibration")
+
+    if "low oil" in t or "low lubrication" in t:
+        score += 3
+        reasons.append("Low lubrication")
+
+    if "noise" in t:
+        score += 1
+        reasons.append("Abnormal noise")
+
+    if "leak" in t:
+        score += 2
+        reasons.append("Leakage detected")
+
+    if "last service" in t and "days" in t:
+        score += 2
+        reasons.append("Overdue maintenance")
+
+    return score, reasons
+
+
+def score_to_risk(score: int) -> str:
+
+    if score >= 10:
+        return "CRITICAL"
+    elif score >= 7:
+        return "HIGH"
+    elif score >= 4:
+        return "MEDIUM"
+    else:
+        return "LOW"
+
+
 def predict_failure_impl(text: str) -> str:
 
     print("Predicting failure...")
@@ -165,24 +211,33 @@ def predict_failure_impl(text: str) -> str:
         print("CACHE HIT")
         return cached
 
+    score, rule_reasons = calculate_failure_score(text)
+    risk = score_to_risk(score)
+
+    rule_reasons_text = "\n".join(f"- {r}" for r in rule_reasons) if rule_reasons else "- No specific signals detected"
+
     prompt = f"""
 You are a predictive maintenance expert.
 
-Analyze the report and predict machine failure.
+Given:
 
-Report:
-{text}
+Risk Level: {risk}
+Score: {score}
+Detected Issues:
+{rule_reasons_text}
+
+Estimate:
+
+1. Time to failure
+2. Additional reasoning
+3. Recommended actions
 
 Return in format:
-
-Failure Risk: LOW / MEDIUM / HIGH / CRITICAL
 
 Estimated Time to Failure: (hours/days)
 
 Reasons:
-- reason 1
-- reason 2
-- reason 3
+- combine rule-based + analysis
 
 Recommendation:
 - action 1
@@ -196,11 +251,20 @@ Recommendation:
         ]
     )
 
-    result = r.choices[0].message.content
+    llm_output = r.choices[0].message.content
 
-    set_cache("failure", text, result)
+    final_result = f"""Failure Risk: {risk}
 
-    return result
+Score: {score}
+
+Rule-Based Reasons:
+{rule_reasons_text}
+
+{llm_output}"""
+
+    set_cache("failure", text, final_result)
+
+    return final_result
 
 
 def get_report_context_impl(last_pdf: str = "") -> str:
