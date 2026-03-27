@@ -1,17 +1,49 @@
+from openai import OpenAI
+
+client = OpenAI()
+
+VALID_ROUTES = {"issues", "risk", "plan", "recommend", "chat"}
+
+
 def route_query(query: str) -> str:
 
-    q = query.lower()
+    prompt = f"""
+Classify the following user query into ONE category:
 
-    if any(x in q for x in ["issue", "problem", "fault"]):
-        return "issues"
+- issues (if asking about problems, faults, issues)
+- risk (if asking about risk, danger, failure)
+- plan (if asking what to do, fix, repair, steps, maintenance plan)
+- recommend (if asking for recommendations or suggestions)
+- chat (if none of the above)
 
-    if any(x in q for x in ["risk", "danger", "failure"]):
-        return "risk"
+Only return ONE word from:
+issues, risk, plan, recommend, chat
 
-    if any(x in q for x in ["fix", "repair", "solution", "what to do", "how to fix"]):
-        return "plan"
+Query:
+{query}
+"""
 
-    if any(x in q for x in ["recommend", "suggest"]):
-        return "recommend"
+    try:
 
-    return "chat"
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0
+        )
+
+        result = response.choices[0].message.content.strip().lower()
+
+        print("ROUTER RESULT:", result)
+
+        if result in VALID_ROUTES:
+            return result
+
+        return "chat"
+
+    except Exception as e:
+
+        print("ROUTER ERROR:", e)
+
+        return "chat"

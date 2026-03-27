@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 import shutil
+import uuid
 
 from core.reader import read_pdf
 from core.parser import parse_report
@@ -7,14 +8,21 @@ from core.rag import retrieve
 from core.generator import generate_recommendation
 from core.rag import chat_with_manual
 from core.logger import save_log
+from core.session_store import save_report, get_report
+from core.controller import handle_query
 from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
-from core.controller import handle_query
 from pydantic import BaseModel
 
 
 class QueryRequest(BaseModel):
     query: str
+    session_id: str
+
+
+class ChatRequest(BaseModel):
+    question: str
+    session_id: str
 
 
 client = OpenAI()
@@ -29,7 +37,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-last_pdf_text = ""
 @app.get("/")
 def home():
     return {"message": "Maintenance Agent API running"}
@@ -40,26 +47,20 @@ async def analyze(file: UploadFile = File(...)):
 
     temp_path = "temp.pdf"
 
-    # save uploaded file
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # 1 read
     text = read_pdf(temp_path)
 
-    global last_pdf_text
+    session_id = str(uuid.uuid4())
+    save_report(session_id, text)
 
-    last_pdf_text = text
-
-    # 2 parse
     parsed = parse_report(text)
-
-    # 3 retrieve
     docs = retrieve(parsed)
     context = [d.page_content for d in docs]
 
-    # 4 generate
     result = generate_recommendation(parsed, docs)
+
     save_log({
         "type": "analyze",
         "text": text,
@@ -67,26 +68,29 @@ async def analyze(file: UploadFile = File(...)):
         "context": context,
         "recommendation": result
     })
+
     return {
+        "session_id": session_id,
         "parsed": parsed,
-        "context": [d.page_content for d in docs],
+        "context": context,
         "recommendation": result
     }
 
  
 
 @app.post("/chat")
-async def chat(question: str):
+async def chat(req: ChatRequest):
 
-    global last_pdf_text
+    report_text = get_report(req.session_id)
 
-    docs = retrieve(question)
+    if not report_text:
+        return {
+            "answer": "Invalid session. Please upload report again."
+        }
 
-    manual_context = "\n".join(
-        [d.page_content for d in docs]
-    )
+    docs = retrieve(req.question)
 
-    pdf_context = last_pdf_text
+    manual_context = "\n".join([d.page_content for d in docs])
 
     prompt = f"""
 You are a maintenance assistant.
@@ -95,10 +99,10 @@ Manual:
 {manual_context}
 
 Report:
-{pdf_context}
+{report_text}
 
 Question:
-{question}
+{req.question}
 """
 
     r = client.chat.completions.create(
@@ -107,33 +111,32 @@ Question:
             {"role": "user", "content": prompt}
         ]
     )
-    
+
     answer = r.choices[0].message.content
 
     save_log({
         "type": "chat",
-        "question": question,
+        "question": req.question,
         "answer": answer,
-        "pdf": pdf_context
+        "pdf": report_text
     })
 
     return {
-        "answer": r.choices[0].message.content
+        "answer": answer
     }
+
 
 @app.post("/agent")
 async def agent_api(req: QueryRequest):
 
-    query = req.query
+    report_text = get_report(req.session_id)
 
-    global last_pdf_text
-
-    if last_pdf_text == "":
+    if not report_text:
         return {
-            "answer": "No report uploaded"
+            "answer": "Invalid session. Please upload report again."
         }
 
-    result = handle_query(query, last_pdf_text)
+    result = handle_query(req.query, report_text)
 
     return {
         "answer": result
