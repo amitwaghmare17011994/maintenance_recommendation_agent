@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Header, HTTPException
 import shutil
 import uuid
 
@@ -13,6 +13,30 @@ from core.controller import handle_query
 from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+
+API_KEY = "my-secret-key"
+
+BLOCKED_WORDS = [
+    "ignore previous",
+    "system prompt",
+    "developer message",
+    "reveal instructions",
+]
+
+
+def verify_api_key(x_api_key: str = Header(...)) -> None:
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+def check_query(query: str) -> str | None:
+    """Returns an error string if the query is invalid, else None."""
+    if not query or len(query) > 500:
+        return "Invalid query"
+    if any(word in query.lower() for word in BLOCKED_WORDS):
+        return "Unsafe query detected"
+    return None
 
 
 class QueryRequest(BaseModel):
@@ -31,7 +55,10 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://maintenance-recommendation-agent-fe.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,7 +70,12 @@ def home():
 
 
 @app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
+async def analyze(file: UploadFile = File(...), x_api_key: str = Header(...)):
+
+    verify_api_key(x_api_key)
+
+    if file.content_type != "application/pdf":
+        return {"error": "Only PDF files are allowed"}
 
     temp_path = "temp.pdf"
 
@@ -79,7 +111,13 @@ async def analyze(file: UploadFile = File(...)):
  
 
 @app.post("/chat")
-async def chat(req: ChatRequest):
+async def chat(req: ChatRequest, x_api_key: str = Header(...)):
+
+    verify_api_key(x_api_key)
+
+    error = check_query(req.question)
+    if error:
+        return {"answer": error}
 
     report_text = get_report(req.session_id)
 
@@ -127,7 +165,13 @@ Question:
 
 
 @app.post("/agent")
-async def agent_api(req: QueryRequest):
+async def agent_api(req: QueryRequest, x_api_key: str = Header(...)):
+
+    verify_api_key(x_api_key)
+
+    error = check_query(req.query)
+    if error:
+        return {"answer": error}
 
     report_text = get_report(req.session_id)
 
