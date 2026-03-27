@@ -88,7 +88,18 @@ async def analyze(file: UploadFile = File(...), x_api_key: str = Header(...)):
     save_report(session_id, text)
 
     parsed = parse_report(text)
-    docs = retrieve(parsed)
+
+    if not parsed or "error" in parsed:
+        docs = retrieve(text)
+    else:
+        query_text = f"""
+Machine: {parsed.get("machine_id")}
+Issue: {parsed.get("issues")}
+Temperature: {parsed.get("temperature")}
+Vibration: {parsed.get("vibration")}
+""".strip()
+        docs = retrieve(query_text)
+
     context = [d.page_content for d in docs]
 
     result = generate_recommendation(parsed, docs)

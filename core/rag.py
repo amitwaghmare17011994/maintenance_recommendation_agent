@@ -34,7 +34,9 @@ def build_db():
     print("Vector DB created")
 
 
-def retrieve(query):
+def retrieve(query: str):
+
+    query = query.strip()
 
     embeddings = OpenAIEmbeddings()
 
@@ -44,7 +46,7 @@ def retrieve(query):
         allow_dangerous_deserialization=True
     )
 
-    docs = db.similarity_search(query, k=2)
+    docs = db.similarity_search(query, k=3)
 
     return docs
 
