@@ -4,6 +4,7 @@ from core.tools_impl import (
     risk_assessment_impl,
     create_maintenance_plan_impl,
     recommend_from_text_impl,
+    predict_failure_impl,
 )
 
 
@@ -25,5 +26,8 @@ def handle_query(query: str, report_text: str) -> str:
     elif tool == "recommend":
         return recommend_from_text_impl(report_text)
 
+    elif tool == "failure":
+        return predict_failure_impl(report_text)
+
     elif tool == "chat":
-        return "Please ask about issues, risk, or maintenance plan."
+        return "Please ask about issues, risk, failure prediction, or maintenance plan."

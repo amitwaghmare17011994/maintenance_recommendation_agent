@@ -155,6 +155,54 @@ def recommend_from_text_impl(text: str) -> str:
     return result
 
 
+def predict_failure_impl(text: str) -> str:
+
+    print("Predicting failure...")
+
+    cached = get_cache("failure", text)
+
+    if cached:
+        print("CACHE HIT")
+        return cached
+
+    prompt = f"""
+You are a predictive maintenance expert.
+
+Analyze the report and predict machine failure.
+
+Report:
+{text}
+
+Return in format:
+
+Failure Risk: LOW / MEDIUM / HIGH / CRITICAL
+
+Estimated Time to Failure: (hours/days)
+
+Reasons:
+- reason 1
+- reason 2
+- reason 3
+
+Recommendation:
+- action 1
+- action 2
+"""
+
+    r = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    result = r.choices[0].message.content
+
+    set_cache("failure", text, result)
+
+    return result
+
+
 def get_report_context_impl(last_pdf: str = "") -> str:
 
     print("Getting last uploaded report text...")

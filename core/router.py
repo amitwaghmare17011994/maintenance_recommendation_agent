@@ -2,7 +2,7 @@ from openai import OpenAI
 
 client = OpenAI()
 
-VALID_ROUTES = {"issues", "risk", "plan", "recommend", "chat"}
+VALID_ROUTES = {"issues", "risk", "plan", "recommend", "failure", "chat"}
 
 
 def route_query(query: str) -> str:
@@ -11,13 +11,14 @@ def route_query(query: str) -> str:
 Classify the following user query into ONE category:
 
 - issues (if asking about problems, faults, issues)
-- risk (if asking about risk, danger, failure)
+- risk (if asking about risk, danger, safety)
 - plan (if asking what to do, fix, repair, steps, maintenance plan)
 - recommend (if asking for recommendations or suggestions)
+- failure (if asking about breakdown, failure prediction, will it fail, time to fail, estimated failure)
 - chat (if none of the above)
 
 Only return ONE word from:
-issues, risk, plan, recommend, chat
+issues, risk, plan, recommend, failure, chat
 
 Query:
 {query}
