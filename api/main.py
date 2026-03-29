@@ -1,6 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Header, HTTPException
 import shutil
 import uuid
+import tempfile
+import os
 
 from core.reader import read_pdf
 from core.parser import parse_report
@@ -53,12 +55,14 @@ async def analyze(file: UploadFile = File(...), x_api_key: str = Header(...)):
     if file.content_type != "application/pdf":
         return {"error": "Only PDF files are allowed"}
 
-    temp_path = "temp.pdf"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        temp_path = tmp.name
+        shutil.copyfileobj(file.file, tmp)
 
-    with open(temp_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    text = read_pdf(temp_path)
+    try:
+        text = read_pdf(temp_path)
+    finally:
+        os.remove(temp_path)
 
     session_id = str(uuid.uuid4())
     save_report(session_id, text)
