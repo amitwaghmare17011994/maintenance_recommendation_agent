@@ -1,50 +1,60 @@
+import json
+import re
+
 from openai import OpenAI
 
 client = OpenAI()
 
-VALID_ROUTES = {"issues", "risk", "plan", "recommend", "failure", "chat"}
+VALID_INTENTS = {"structured", "reasoning", "plan"}
+
+ROUTER_SYSTEM_PROMPT = """
+You are an intent classifier for a maintenance AI system.
+
+Classify the user query into ONE of these intents:
+
+1. structured → asking for direct data (machine id, issues list, last service date, etc.)
+2. reasoning  → asking "why", "how", explanations, causes, danger levels
+3. plan       → asking for maintenance plan, recommendations, risks, failure prediction, repair steps
+
+Rules:
+- Return ONLY valid JSON.
+- No explanation, no markdown, no code block.
+- Format:
+
+{"intent": "structured" | "reasoning" | "plan"}
+"""
 
 
 def route_query(query: str) -> str:
-
-    prompt = f"""
-Classify the following user query into ONE category:
-
-- issues (if asking about problems, faults, issues)
-- risk (if asking about risk, danger, safety)
-- plan (if asking what to do, fix, repair, steps, maintenance plan)
-- recommend (if asking for recommendations or suggestions)
-- failure (if asking about breakdown, failure prediction, will it fail, time to fail, estimated failure)
-- chat (if none of the above)
-
-Only return ONE word from:
-issues, risk, plan, recommend, failure, chat
-
-Query:
-{query}
-"""
 
     try:
 
         response = client.chat.completions.create(
             model="gpt-4.1-mini",
+            temperature=0,
             messages=[
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0
+                {"role": "system", "content": ROUTER_SYSTEM_PROMPT},
+                {"role": "user", "content": query},
+            ]
         )
 
-        result = response.choices[0].message.content.strip().lower()
+        raw = response.choices[0].message.content.strip()
 
-        print("ROUTER RESULT:", result)
+        # strip markdown fences if present
+        match = re.search(r"```(?:json)?\s*([\s\S]*?)```", raw)
+        if match:
+            raw = match.group(1).strip()
 
-        if result in VALID_ROUTES:
-            return result
+        data = json.loads(raw)
+        intent = data.get("intent", "reasoning")
 
-        return "chat"
+        if intent not in VALID_INTENTS:
+            intent = "reasoning"
+
+        print("ROUTER:", query, "→", intent)
+        return intent
 
     except Exception as e:
 
         print("ROUTER ERROR:", e)
-
-        return "chat"
+        return "reasoning"

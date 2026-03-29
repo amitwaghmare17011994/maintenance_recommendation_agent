@@ -5,10 +5,27 @@ load_dotenv()
 
 client = OpenAI()
 
+GROUNDING_SYSTEM_PROMPT = """
+You are a maintenance assistant.
+
+STRICT RULES:
+- Only use the provided CONTEXT to answer.
+- Do NOT use external knowledge.
+- If the answer is not in CONTEXT, say: "Not found in report."
+- Every important statement must include a citation.
+- If context does not contain relevant information, do NOT guess.
+
+Citation format:
+(Source: <short snippet from context>)
+"""
+
 
 def generate_recommendation(parsed, docs):
 
-    context = "\n".join([d.page_content for d in docs[:2]])
+    if not docs:
+        return "No relevant context found."
+
+    context = "\n\n".join([d.page_content[:200] for d in docs[:2]])
 
     machine_summary = f"""
 Machine ID: {parsed.get("machine_id", "unknown")}
@@ -21,26 +38,28 @@ Warning: {parsed.get("warning", "")}
 """.strip()
 
     prompt = f"""
-You are a maintenance assistant.
-
-Machine data:
-{machine_summary}
-
-Maintenance guide:
+CONTEXT:
 {context}
 
-Give:
+REPORT:
+{machine_summary}
 
-1. Issue detected
-2. Possible cause
-3. Recommended action
-4. Priority level
+Task:
+1. Identify issues detected in the report
+2. Explain possible causes using ONLY the CONTEXT above
+3. Provide recommended actions
+
+IMPORTANT:
+- Every explanation must cite the CONTEXT using format: (Source: ...)
+- If context does not cover a point, write: "Not found in report."
+- Do NOT guess or use external knowledge
 """
 
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": GROUNDING_SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
         ]
     )
 

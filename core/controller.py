@@ -1,33 +1,29 @@
-from core.router import route_query
 from core.tools_impl import (
     list_detected_issues_impl,
     risk_assessment_impl,
     create_maintenance_plan_impl,
-    recommend_from_text_impl,
     predict_failure_impl,
 )
 
+VALID_ACTIONS = {"issues", "risk", "plan", "failure"}
 
-def handle_query(query: str, report_text: str) -> str:
 
-    tool = route_query(query)
+def handle_query(action: str, report_text: str) -> str:
 
-    print("ROUTED TO:", tool)
+    action = action.lower().strip()
 
-    if tool == "issues":
+    print("ACTION:", action)
+
+    if action == "issues":
         return list_detected_issues_impl(report_text)
 
-    elif tool == "risk":
+    if action == "risk":
         return risk_assessment_impl(report_text)
 
-    elif tool == "plan":
+    if action == "plan":
         return create_maintenance_plan_impl(report_text)
 
-    elif tool == "recommend":
-        return recommend_from_text_impl(report_text)
-
-    elif tool == "failure":
+    if action == "failure":
         return predict_failure_impl(report_text)
 
-    elif tool == "chat":
-        return "Please ask about issues, risk, failure prediction, or maintenance plan."
+    return f"Invalid action '{action}'. Valid actions: {', '.join(sorted(VALID_ACTIONS))}"
